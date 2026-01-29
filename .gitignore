@@ -34,6 +34,7 @@ ENV/
 crawler.log
 
 # CSV Data Files (protect user data)
+restaurant.csv
 restaurants.csv
 restaurants_results.csv
 *_results.csv

@@ -9,7 +9,7 @@ SENDER_EMAIL = "webb@flowdrop.ai"
 MESSAGE_TEMPLATE = """Hi {restaurant_name}, I'm Webb from Flowdrop. We've built an AI agent for restaurant back office that's cheaper than MarginEdge and handles scheduling too. We're filling a small pilot group to test it. Would love to show you a quick demo: https://calendly.com/webb-flowdrop/new-meeting"""
 
 # ========== CSV FILE SETTINGS ==========
-INPUT_CSV = "restaurants.csv"  # Path to your input CSV file
+INPUT_CSV = "restaurant.csv"  # Path to your input CSV file
 OUTPUT_CSV = "restaurants_results.csv"  # Where to save results
 
 # ========== BROWSER SETTINGS ==========

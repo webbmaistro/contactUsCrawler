@@ -82,7 +82,7 @@ ollama pull llama3.2
 
 ### 1. Prepare Your Restaurant List
 
-Create a CSV file named `restaurants.csv` with two columns:
+Create a CSV file named `restaurant.csv` with two columns:
 
 ```csv
 website_url,restaurant_name
