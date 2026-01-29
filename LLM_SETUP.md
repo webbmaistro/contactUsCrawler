@@ -421,7 +421,7 @@ OLLAMA_MODEL = "mistral"
 
 ### Custom Prompts
 
-To modify how the LLM analyzes forms, edit the prompt in `crawler.py` at `OllamaLLM.detect_form_fields()`:
+To modify how the LLM analyzes forms, edit the prompt in `crawler/llm.py` at `OllamaLLM.detect_form_fields()`:
 
 ```python
 prompt = f"""Your custom prompt here...
