@@ -43,32 +43,40 @@ git clone <your-repo-url>
 cd contactUsCrawler
 ```
 
-### 2. Install Python Dependencies
+### 2. Run the Setup Script (recommended)
 
+```bash
+python setup.py
+```
+
+This installs Python dependencies and the Playwright Chromium browser. To also pull the Ollama model (requires [Ollama](https://ollama.com) installed):
+
+```bash
+python setup.py --ollama
+```
+
+### Alternative: Manual Installation
+
+<details>
+<summary>Click to expand manual steps</summary>
+
+**Install Python dependencies:**
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Install Playwright Browsers
-
+**Install Playwright browsers:**
 ```bash
 playwright install chromium
 ```
 
-This downloads the Chromium browser that Playwright uses for automation.
-
-### 4. (Optional) Install Ollama
-
-For AI-powered form detection, install Ollama following the instructions in [LLM_SETUP.md](LLM_SETUP.md).
-
-**Quick install:**
-- **Linux/Mac**: `curl -fsSL https://ollama.com/install.sh | sh`
-- **Windows**: Download from [ollama.com](https://ollama.com)
-
-Then pull the model:
+**Optional – Ollama for AI form detection:**  
+Install from [ollama.com](https://ollama.com), then:
 ```bash
 ollama pull llama3.2
 ```
+
+</details>
 
 ## 📝 Usage
 
