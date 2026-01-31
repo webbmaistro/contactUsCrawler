@@ -1,0 +1,6 @@
+# Contact form crawler only (Playwright + pandas + LLM deps)
+# Run: pip install -r requirements-crawler.txt && playwright install chromium && python crawler.py
+playwright>=1.41.0
+pandas>=2.1.0
+requests>=2.31.0
+colorama>=0.4.6

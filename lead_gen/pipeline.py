@@ -37,6 +37,7 @@ def run_pipeline(
     if existing_rows:
         config.logger.info("Loaded %s existing rows from %s (will skip those domains)", len(existing_rows), output_csv)
 
+    config.logger.info("Fetching restaurants from API(s)... (this can take a while with Geoapify)")
     restaurants = get_all_restaurants_parallel(
         query,
         google_key=google_key,
@@ -46,9 +47,16 @@ def run_pipeline(
 
     with open(output_csv, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["restaurant_name", "website", "emails_found"])
+        w.writerow(["restaurant_name", "website", "emails_found", "phone_numbers_found", "contact_page_found", "query"])
         for row in existing_rows:
-            w.writerow([row["name"], row["website"], row["emails_found"]])
+            w.writerow([
+                row["name"],
+                row["website"],
+                row["emails_found"],
+                row.get("phone_numbers_found", ""),
+                row.get("contact_page_found", ""),
+                row.get("query", ""),
+            ])
 
     ollama_chain_enabled = use_ollama_chain_filter() and ollama_available()
     if ollama_chain_enabled:
@@ -93,17 +101,43 @@ def run_pipeline(
 
         if not is_scraping_allowed(final_url):
             n_skip_robots += 1
-            config.logger.info("Skipping %s (robots.txt disallows)", name)
+            save_row(
+                output_csv,
+                name,
+                final_url,
+                [],
+                [],
+                contact_page_found="",
+                query=query,
+                write_header=False,
+            )
+            config.logger.info("Skipping %s (robots.txt disallows) — logged to CSV", name)
             continue
 
-        emails, homepage_ok = get_public_emails(final_url)
+        emails, phones, homepage_ok, contact_page_found = get_public_emails(final_url)
         if not homepage_ok:
             n_skip_dead += 1
             config.logger.info("Skipping %s (site unreachable or invalid SSL)", name)
             continue
-        save_row(output_csv, name, final_url, emails, write_header=False)
+        save_row(
+            output_csv,
+            name,
+            final_url,
+            emails,
+            phones,
+            contact_page_found=contact_page_found,
+            query=query,
+            write_header=False,
+        )
         n_written += 1
-        config.logger.info("Saved %s | %s | %s", name, final_url, "|".join(emails) if emails else "(no emails)")
+        print("new restaurant :", name)
+        config.logger.info(
+            "Saved %s | %s | emails: %s | phones: %s",
+            name,
+            final_url,
+            "|".join(emails) if emails else "(none)",
+            "|".join(phones) if phones else "(none)",
+        )
         time.sleep(config.SCRAPE_DELAY_SECONDS)
 
     config.logger.info(

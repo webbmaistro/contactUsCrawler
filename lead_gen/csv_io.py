@@ -7,13 +7,29 @@ from lead_gen import config
 from lead_gen.places_merge import extract_domain
 
 
-def save_row(csv_path: str, restaurant_name: str, website: str, emails: list, write_header: bool = False):
-    """Append one row to CSV. Format: restaurant_name, website, emails_found (pipe-separated)."""
-    row = [restaurant_name, website, "|".join(emails) if emails else ""]
+def save_row(
+    csv_path: str,
+    restaurant_name: str,
+    website: str,
+    emails: list,
+    phones: list,
+    contact_page_found: str = "",
+    query: str = "",
+    write_header: bool = False,
+):
+    """Append one row to CSV. Columns: restaurant_name, website, emails_found, phone_numbers_found, contact_page_found (URL), query."""
+    row = [
+        restaurant_name,
+        website,
+        "|".join(emails) if emails else "",
+        "|".join(phones) if phones else "",
+        (contact_page_found or "").strip(),
+        (query or "").strip(),
+    ]
     with open(csv_path, "a", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         if write_header:
-            w.writerow(["restaurant_name", "website", "emails_found"])
+            w.writerow(["restaurant_name", "website", "emails_found", "phone_numbers_found", "contact_page_found", "query"])
         w.writerow(row)
 
 
@@ -37,13 +53,23 @@ def load_existing_csv(csv_path: str) -> tuple:
             name = (row.get("restaurant_name") or "").strip()
             website = (row.get("website") or "").strip()
             emails_found = (row.get("emails_found") or "").strip()
+            phones_found = (row.get("phone_numbers_found") or "").strip()
+            contact_page_found = (row.get("contact_page_found") or "").strip()
+            query = (row.get("query") or "").strip()
             if not website:
                 continue
             domain = extract_domain(website) or ""
             if domain and domain in seen:
                 continue
             seen.add(domain)
-            existing.append({"name": name, "website": website, "emails_found": emails_found})
+            existing.append({
+                "name": name,
+                "website": website,
+                "emails_found": emails_found,
+                "phone_numbers_found": phones_found,
+                "contact_page_found": contact_page_found,
+                "query": query,
+            })
         return existing, seen
     except Exception as e:
         config.logger.warning("Could not load existing CSV %s: %s", csv_path, e)

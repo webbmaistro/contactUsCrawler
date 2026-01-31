@@ -53,7 +53,8 @@ def get_restaurants_google(query: str, api_key: str) -> list:
             if detail_resp:
                 detail_data = detail_resp.json()
                 if detail_data.get("status") == "OK":
-                    website = detail_data.get("result", {}).get("website")
+                    result = detail_data.get("result", {})
+                    website = result.get("website") or result.get("url")
             results.append({"name": name, "website": website or None, "source": "google"})
 
         next_token = data.get("next_page_token")

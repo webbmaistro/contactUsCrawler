@@ -15,6 +15,13 @@ Reach out to restaurants at scale: **build a list** of restaurants with websites
 - **Lead-gen only:** `requests`, `beautifulsoup4` (no browser)
 - **Crawler:** Playwright (Chromium). Optional: [Ollama](https://ollama.com) for better form detection (~85–95% success vs ~60–70% with selectors only); see [LLM_SETUP.md](LLM_SETUP.md).
 
+**Run one bot without the other:** The two bots are independent (no cross-imports). To install only what you need:
+
+- **Lead-gen only:** `pip install -r requirements-leadgen.txt` → `python lead_gen_bot.py` (no Playwright, no pandas).
+- **Crawler only:** `pip install -r requirements-crawler.txt` → `playwright install chromium` → `python crawler.py`.
+
+Use `pip install -r requirements.txt` if you want both.
+
 ---
 
 ## Project layout

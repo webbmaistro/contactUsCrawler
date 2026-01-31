@@ -44,6 +44,9 @@ restaurant_leads.csv
 # Lead-gen failure log
 lead_gen_failures.log
 
+# Lead-gen daily usage (credits used today)
+lead_gen_usage.json
+
 # Screenshots and HTML dumps (debug files)
 screenshots/
 html_dumps/

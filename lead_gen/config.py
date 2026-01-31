@@ -2,6 +2,7 @@
 
 import logging
 import re
+from pathlib import Path
 
 # ---------------------------------------------------------------------------
 # HTTP & scraping
@@ -12,14 +13,24 @@ REQUEST_TIMEOUT = 15
 MAX_RETRIES = 2
 RETRY_BACKOFF = 2
 OUTPUT_CSV = "restaurant_leads.csv"
-FAILURE_LOG = "lead_gen_failures.log"
+# Resolve failure log to project root so it's always the same file regardless of cwd
+_FAILURE_LOG_NAME = "lead_gen_failures.log"
+FAILURE_LOG = str(Path(__file__).resolve().parent.parent / _FAILURE_LOG_NAME)
 EMAIL_REGEX = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
 
 # Free-tier limits
 GOOGLE_MAX_RESULTS = 20
 GOOGLE_REQUEST_DELAY = 0.5
-GEOAPIFY_MAX_RESULTS = 20
-GEOAPIFY_REQUEST_DELAY = 0.25
+# Max restaurants to fetch from Geoapify per run. Per Geoapify docs: Geocoding 1 credit; Places = 1 credit per 20 (max 500/request); Place Details 1 credit each.
+# With GEOAPIFY_DAILY_CREDIT_CAP=3000, one run can use the full cap → ~2850 places (1 + 6×25 + 2849). Set to 3000 to "use all 3000 credits per run".
+GEOAPIFY_MAX_RESULTS = 3000
+# Seconds between each Geoapify API call (geocode, places, place-details).
+# Higher = spread out usage, stay under rate limits and daily cap.
+GEOAPIFY_REQUEST_DELAY = 2.0
+# Geoapify daily credit cap (free tier = 3000/day). We stop making API calls once we hit this. Set to 0 to disable.
+GEOAPIFY_DAILY_CREDIT_CAP = 3000
+# File to persist daily usage (next to project root, or use absolute path)
+USAGE_FILE = "lead_gen_usage.json"
 
 # Pages to check for contact/about info
 CONTACT_PATHS = ["/contact", "/contact-us", "/contactus", "/about", "/about-us", "/get-in-touch"]
@@ -53,8 +64,10 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger("LeadGenBot")
+failure_logger = logging.getLogger("LeadGenBot.failures")
+failure_logger.setLevel(logging.WARNING)
+failure_logger.propagate = False  # Only write to our file, don't rely on root
 failure_handler = logging.FileHandler(FAILURE_LOG, encoding="utf-8")
 failure_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
-failure_logger = logging.getLogger("LeadGenBot.failures")
+failure_handler.setLevel(logging.WARNING)
 failure_logger.addHandler(failure_handler)
-failure_logger.setLevel(logging.WARNING)
