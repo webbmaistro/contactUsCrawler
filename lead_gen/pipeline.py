@@ -7,6 +7,7 @@ import os
 import time
 from pathlib import Path
 from typing import Optional
+from dotenv import load_dotenv
 
 from lead_gen import config
 from lead_gen.chain_filter import ollama_available, is_chain_restaurant_ollama, use_ollama_chain_filter
@@ -147,6 +148,9 @@ def run_pipeline(
 
 def main():
     """Entry point: read env and run pipeline."""
+    # Load .env file from project root
+    load_dotenv()
+
     query = os.environ.get("LEAD_GEN_QUERY", "restaurants in Denver Colorado")
     google_key = os.environ.get("GOOGLE_PLACES_API_KEY", "").strip() or None
     geoapify_key = os.environ.get("GEOAPIFY_API_KEY", "").strip() or None
