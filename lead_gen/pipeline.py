@@ -67,7 +67,6 @@ def run_pipeline(
     n_skip_already = 0
     n_skip_chain_domain = 0
     n_skip_chain_ollama = 0
-    n_skip_catering = 0
     n_skip_robots = 0
     n_skip_dead = 0
 
@@ -79,15 +78,7 @@ def run_pipeline(
         config.logger.info("Processing batch of %s restaurants (API batch)", len(batch))
         for r in batch:
             name = (r.get("name") or "").strip()
-            name_lower = name.lower()
             website = (r.get("website") or "").strip()
-
-            # Skip catering businesses
-            if any(keyword in name_lower for keyword in config.SKIP_NAME_KEYWORDS):
-                n_skip_catering += 1
-                config.logger.info("Skipping %s (catering/food service business)", name)
-                continue
-
             if not website:
                 n_skip_no_website += 1
                 config.logger.info("Skipping %s (no website)", name)
@@ -155,8 +146,8 @@ def run_pipeline(
             time.sleep(config.SCRAPE_DELAY_SECONDS)
 
     config.logger.info(
-        "Done. Written: %s | Skipped: already=%s, chain(domain)=%s, chain(Ollama)=%s, catering=%s, robots=%s, dead/SSL=%s, no_website=%s",
-        n_written, n_skip_already, n_skip_chain_domain, n_skip_chain_ollama, n_skip_catering, n_skip_robots, n_skip_dead, n_skip_no_website,
+        "Done. Written: %s | Skipped: already=%s, chain(domain)=%s, chain(Ollama)=%s, robots=%s, dead/SSL=%s, no_website=%s",
+        n_written, n_skip_already, n_skip_chain_domain, n_skip_chain_ollama, n_skip_robots, n_skip_dead, n_skip_no_website,
     )
     config.logger.info("Output: %s | Failures: %s", output_csv, config.FAILURE_LOG)
 
