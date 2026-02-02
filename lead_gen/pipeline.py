@@ -40,7 +40,7 @@ def run_pipeline(
     config.logger.info("Fetching restaurants from API(s)... (processing starts as soon as first source returns)")
     with open(output_csv, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["restaurant_name", "website", "emails_found", "phone_numbers_found", "contact_page_found", "query"])
+        w.writerow(["restaurant_name", "website", "emails_found", "phone_numbers_found", "contact_page_found", "query", "source", "skip_reason"])
         for row in existing_rows:
             w.writerow([
                 row["name"],
@@ -49,6 +49,8 @@ def run_pipeline(
                 row.get("phone_numbers_found", ""),
                 row.get("contact_page_found", ""),
                 row.get("query", ""),
+                row.get("source", ""),
+                row.get("skip_reason", ""),
             ])
 
     ollama_chain_enabled = use_ollama_chain_filter() and ollama_available()
@@ -72,9 +74,22 @@ def run_pipeline(
         for r in batch:
             name = (r.get("name") or "").strip()
             website = (r.get("website") or "").strip()
+            source = (r.get("source") or "").strip()
             if not website:
                 n_skip_no_website += 1
-                config.logger.info("Skipping %s (no website)", name)
+                save_row(
+                    output_csv,
+                    name,
+                    "",
+                    [],
+                    [],
+                    contact_page_found="",
+                    query=query,
+                    source=source,
+                    skip_reason="no_website",
+                    write_header=False,
+                )
+                config.logger.info("Logged %s (no website) — source: %s", name, source)
                 continue
             final_url = resolve_final_url(website)
             if not final_url:
@@ -108,6 +123,8 @@ def run_pipeline(
                     [],
                     contact_page_found="",
                     query=query,
+                    source=source,
+                    skip_reason="robots_txt_disallowed",
                     write_header=False,
                 )
                 config.logger.info("Skipping %s (robots.txt disallows) — logged to CSV", name)
@@ -126,6 +143,8 @@ def run_pipeline(
                 phones,
                 contact_page_found=contact_page_found,
                 query=query,
+                source=source,
+                skip_reason="",
                 write_header=False,
             )
             n_written += 1

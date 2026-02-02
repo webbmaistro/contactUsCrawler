@@ -15,9 +15,11 @@ def save_row(
     phones: list,
     contact_page_found: str = "",
     query: str = "",
+    source: str = "",
+    skip_reason: str = "",
     write_header: bool = False,
 ):
-    """Append one row to CSV. Columns: restaurant_name, website, emails_found, phone_numbers_found, contact_page_found (URL), query."""
+    """Append one row to CSV. Columns: restaurant_name, website, emails_found, phone_numbers_found, contact_page_found (URL), query, source, skip_reason."""
     row = [
         restaurant_name,
         website,
@@ -25,11 +27,13 @@ def save_row(
         "|".join(phones) if phones else "",
         (contact_page_found or "").strip(),
         (query or "").strip(),
+        (source or "").strip(),
+        (skip_reason or "").strip(),
     ]
     with open(csv_path, "a", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         if write_header:
-            w.writerow(["restaurant_name", "website", "emails_found", "phone_numbers_found", "contact_page_found", "query"])
+            w.writerow(["restaurant_name", "website", "emails_found", "phone_numbers_found", "contact_page_found", "query", "source", "skip_reason"])
         w.writerow(row)
 
 
@@ -56,6 +60,8 @@ def load_existing_csv(csv_path: str) -> tuple:
             phones_found = (row.get("phone_numbers_found") or "").strip()
             contact_page_found = (row.get("contact_page_found") or "").strip()
             query = (row.get("query") or "").strip()
+            source = (row.get("source") or "").strip()
+            skip_reason = (row.get("skip_reason") or "").strip()
             if not website:
                 continue
             domain = extract_domain(website) or ""
@@ -69,6 +75,8 @@ def load_existing_csv(csv_path: str) -> tuple:
                 "phone_numbers_found": phones_found,
                 "contact_page_found": contact_page_found,
                 "query": query,
+                "source": source,
+                "skip_reason": skip_reason,
             })
         return existing, seen
     except Exception as e:
