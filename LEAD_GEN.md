@@ -68,6 +68,12 @@ python lead_gen_bot.py
 - Uses `LEAD_GEN_QUERY` (default: "restaurants in Denver Colorado") and whichever of `GOOGLE_PLACES_API_KEY`, `GEOAPIFY_API_KEY` is set
 - Output: `restaurant_leads.csv` | Failures: `lead_gen_failures.log`
 
+**Query Format:**
+- **For Geoapify:** Use location-only queries (e.g., `"Maryland"`, `"Baltimore, Maryland"`, `"Austin, Texas"`). The script automatically searches for restaurants in that location.
+- **For Google Places:** Can use business type + location (e.g., `"restaurants in Austin Texas"`, `"Family Restaurant Maryland"`).
+
+If using Geoapify only, avoid including "restaurant" or "family restaurant" in the query - just specify the location.
+
 **CSV:** `restaurant_name`, `website`, `emails_found` (multiple emails joined with `|`)
 
 **No duplicates:** If `restaurant_leads.csv` already exists, the bot loads it and skips any domain that’s already in the file. New results are appended. You can run multiple queries (e.g. different cities) and accumulate into one CSV without duplicate sites.
@@ -78,7 +84,8 @@ python lead_gen_bot.py
 - **Retry logic:** Website fetches retry on transient network errors (configurable `MAX_RETRIES`, `RETRY_BACKOFF` in `lead_gen/config.py`). API calls use the same retry pattern.
 - **Invalid SSL:** Sites with invalid or expired certificates are logged to `lead_gen_failures.log` and skipped (no retry; we do not bypass SSL).
 - **Dead sites:** If the homepage fails after retries (timeout, connection refused, etc.), the restaurant is skipped and not written to CSV. Logged as "site unreachable or invalid SSL".
-- **Chain/franchise domains:** A blocklist `SKIP_DOMAINS` in `lead_gen/config.py` skips known chains (McDonald’s, Chipotle, Subway, etc.). Subdomains are skipped too. **Ollama chain filter:** If [Ollama](https://ollama.com) is running and `USE_OLLAMA_CHAIN_FILTER` is True in `lead_gen/config.py`, the bot also asks Ollama (e.g. `llama3.2`) “is this a chain/franchise?” using the restaurant name and domain; if yes, the restaurant is skipped. Enable/disable via env `LEAD_GEN_USE_OLLAMA_CHAIN=1` (on) or `LEAD_GEN_USE_OLLAMA_CHAIN=0` (off). If unset, the default in `lead_gen/config.py` is used. To use only the blocklist, set `LEAD_GEN_USE_OLLAMA_CHAIN=0` or `USE_OLLAMA_CHAIN_FILTER = False`. Install a model: `ollama pull llama3.2`.
+- **Catering businesses:** Businesses with "catering", "caterer", "food truck", "meal prep", or similar keywords in their name are automatically filtered out. Only sit-down restaurants are included. Keywords are configurable in `SKIP_NAME_KEYWORDS` in `lead_gen/config.py`.
+- **Chain/franchise domains:** A blocklist `SKIP_DOMAINS` in `lead_gen/config.py` skips known chains (McDonald's, Chipotle, Subway, etc.). Subdomains are skipped too. **Ollama chain filter:** If [Ollama](https://ollama.com) is running and `USE_OLLAMA_CHAIN_FILTER` is True in `lead_gen/config.py`, the bot also asks Ollama (e.g. `llama3.2`) "is this a chain/franchise?" using the restaurant name and domain; if yes, the restaurant is skipped. Enable/disable via env `LEAD_GEN_USE_OLLAMA_CHAIN=1` (on) or `LEAD_GEN_USE_OLLAMA_CHAIN=0` (off). If unset, the default in `lead_gen/config.py` is used. To use only the blocklist, set `LEAD_GEN_USE_OLLAMA_CHAIN=0` or `USE_OLLAMA_CHAIN_FILTER = False`. Install a model: `ollama pull llama3.2`.
 
 ## In code
 

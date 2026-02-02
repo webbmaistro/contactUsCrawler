@@ -64,6 +64,12 @@ SKIP_DOMAINS: set = {
     "jimmyjohns.com", "littlecaesars.com",
 }
 
+# Keywords to filter out catering businesses (not sit-down restaurants)
+SKIP_NAME_KEYWORDS: set = {
+    "catering", "caterer", "caterers", "cater", "event catering",
+    "food truck", "food service", "meal prep", "meal delivery",
+}
+
 # Ollama (self-hosted): chain filter and optional website picker
 USE_OLLAMA_CHAIN_FILTER = True
 USE_OLLAMA_WEBSITE_PICKER = True  # When filling websites via search, ask Ollama to pick best URL from results
