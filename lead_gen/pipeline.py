@@ -8,6 +8,13 @@ import time
 from pathlib import Path
 from typing import Optional
 
+# Load environment variables from .env file if present
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # python-dotenv not installed, will use system env vars only
+
 from lead_gen import config
 from lead_gen.chain_filter import ollama_available, is_chain_restaurant_ollama, use_ollama_chain_filter
 from lead_gen.places_merge import get_all_restaurants_parallel, extract_domain

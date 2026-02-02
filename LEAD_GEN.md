@@ -24,19 +24,40 @@ Use at least one API; set only the keys you have.
 
 ## Setup
 
-1. **API keys** (at least one):  
-   - **Google**: [Cloud Console](https://console.cloud.google.com/) → enable Places API → create key  
-   - **Geoapify**: [MyProjects](https://myprojects.geoapify.com/) → create project → API key  
+1. **API keys** (at least one):
+   - **Google**: [Cloud Console](https://console.cloud.google.com/) → enable Places API → create key
+   - **Geoapify**: [MyProjects](https://myprojects.geoapify.com/) → create project → API key
 
-2. **Install**: `pip install requests beautifulsoup4`
+2. **Install**: `pip install -r requirements-leadgen.txt`
 
-3. **Env vars** (Windows):
-   ```bat
-   set GOOGLE_PLACES_API_KEY=your_key
-   set GEOAPIFY_API_KEY=your_key
-   set LEAD_GEN_QUERY=restaurants in Austin Texas
+3. **Configure** (choose one method):
+
+   **Option A: .env file (Recommended)**
+   ```bash
+   # Copy the example file
+   cp .env.example .env
+
+   # Edit .env and add your API keys and query
+   # GEOAPIFY_API_KEY=your_key_here
+   # LEAD_GEN_QUERY=restaurants in Austin Texas
    ```
-   (macOS/Linux: `export` instead of `set`)
+
+   **Option B: Environment variables**
+   - Windows PowerShell:
+     ```powershell
+     $env:GEOAPIFY_API_KEY = "your_key"
+     $env:LEAD_GEN_QUERY = "restaurants in Austin Texas"
+     ```
+   - Windows CMD:
+     ```bat
+     set GEOAPIFY_API_KEY=your_key
+     set LEAD_GEN_QUERY=restaurants in Austin Texas
+     ```
+   - macOS/Linux:
+     ```bash
+     export GEOAPIFY_API_KEY=your_key
+     export LEAD_GEN_QUERY="restaurants in Austin Texas"
+     ```
 
 ## Usage
 
