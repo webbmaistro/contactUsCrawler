@@ -74,12 +74,14 @@ playwright install chromium
 
   ```bash
   set GOOGLE_PLACES_API_KEY=your_key
+  $env:GEOAPIFY_API_KEY = "263c1d089ac347d18fb655ed99640f9f"
   set GEOAPIFY_API_KEY=your_key
+  $env:LEAD_GEN_QUERY = "Family Restaurant Annapolis Maryland"
   set LEAD_GEN_QUERY=restaurants in Austin Texas
   ```
 
 - Run:
-
+python -m pip install -r requirements-leadgen.txt
   ```bash
   python lead_gen_bot.py
   ```
@@ -107,7 +109,7 @@ Full details and rate limits: [LEAD_GEN.md](LEAD_GEN.md).
 
 **What it does:** Calls Google Places and Geoapify Places in parallel (each only if you set its API key), merges and dedupes by domain, then for each restaurant with a website: checks robots.txt, fetches the site and common paths like `/contact` and `/about`, extracts public emails (mailto + regex, same-domain only), and appends a row to CSV.
 
-**Setup:** At least one of `GOOGLE_PLACES_API_KEY`, `GEOAPIFY_API_KEY`; optionally `LEAD_GEN_QUERY` (default: `"restaurants in Denver Colorado"`).
+**Setup:** At least one of `GOOGLE_PLACES_API_KEY`, `GEOAPIFY_API_KEY`; optionally `LEAD_GEN_QUERY` (default: `"restaurants in Denver Colorado"`). **Optional website fallback (when Places/Geoapify return no website):** Run [SearXNG](https://docs.searxng.org/) (e.g. Docker), enable JSON in settings (`search.formats = [html, json]`), then set `SEARXNG_URL=http://localhost:8080`. The bot will search via your instance and pick the first non-aggregator result. With `USE_OLLAMA_WEBSITE_PICKER=True` (and Ollama running), the bot sends the top search results to your local model and asks it to pick the most likely official restaurant site.
 
 **Output:** `restaurant_leads.csv` — columns: `restaurant_name`, `website`, `emails_found` (multiple emails separated by `|`). Only restaurants with a website are written; sites that disallow crawling are skipped. If the file already exists, the bot loads it and **skips any domain already present** (new rows appended only), so you can run multiple queries and accumulate into one CSV without duplicates.
 

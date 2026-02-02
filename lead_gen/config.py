@@ -1,6 +1,7 @@
 """Configuration for the lead-gen bot (override via environment or edit here)."""
 
 import logging
+import os
 import re
 from pathlib import Path
 
@@ -21,9 +22,23 @@ EMAIL_REGEX = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
 # Free-tier limits
 GOOGLE_MAX_RESULTS = 20
 GOOGLE_REQUEST_DELAY = 0.5
+# Optional: Self-hosted SearXNG fallback (free, no API key). Run SearXNG (e.g. Docker) and set base URL.
+# Example: SEARXNG_URL=http://localhost:8080  (enable JSON in settings: search.formats = [html, json])
+SEARXNG_URL = os.environ.get("SEARXNG_URL", "").strip().rstrip("/") or None
+SEARXNG_LOOKUP_DELAY = 0.5  # Seconds between SearXNG lookups
+# Domains to skip when picking a search result (aggregators, not the restaurant's own site)
+SEARCH_SKIP_DOMAINS = frozenset({
+    "yelp.com", "tripadvisor.com", "facebook.com", "instagram.com", "twitter.com",
+    "google.com", "maps.google.com", "opentable.com", "zagat.com", "grubhub.com",
+    "ubereats.com", "doordash.com", "postmates.com", "foursquare.com", "zomato.com",
+    "groupon.com", "yellowpages.com", "superpages.com", "manta.com",
+    "hotels.com", "expedia.com", "booking.com", "wikipedia.org", "wikidata.org",
+})
 # Max restaurants to fetch from Geoapify per run. Per Geoapify docs: Geocoding 1 credit; Places = 1 credit per 20 (max 500/request); Place Details 1 credit each.
 # With GEOAPIFY_DAILY_CREDIT_CAP=3000, one run can use the full cap → ~2850 places (1 + 6×25 + 2849). Set to 3000 to "use all 3000 credits per run".
 GEOAPIFY_MAX_RESULTS = 3000
+# Batch size: fetch this many places from Geoapify per batch before processing (website checks, CSV). Google yields one page (~20) per batch.
+API_BATCH_SIZE = 100
 # Seconds between each Geoapify API call (geocode, places, place-details).
 # Higher = spread out usage, stay under rate limits and daily cap.
 GEOAPIFY_REQUEST_DELAY = 2.0
@@ -49,11 +64,13 @@ SKIP_DOMAINS: set = {
     "jimmyjohns.com", "littlecaesars.com",
 }
 
-# Ollama chain filter
+# Ollama (self-hosted): chain filter and optional website picker
 USE_OLLAMA_CHAIN_FILTER = True
+USE_OLLAMA_WEBSITE_PICKER = True  # When filling websites via search, ask Ollama to pick best URL from results
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
 OLLAMA_MODEL = "llama3.2"
 OLLAMA_CHAIN_TIMEOUT = 15
+OLLAMA_WEBSITE_PICKER_TIMEOUT = 15
 
 # ---------------------------------------------------------------------------
 # Logging

@@ -1,5 +1,6 @@
 """HTTP helpers: retry logic and API provider naming."""
 
+import time
 from typing import Optional
 
 import requests
@@ -45,7 +46,6 @@ def request_with_retry(url: str, params: dict) -> Optional[requests.Response]:
             return r
         except requests.RequestException as e:
             if attempt < config.MAX_RETRIES:
-                import time
                 time.sleep(config.RETRY_BACKOFF * (attempt + 1))
                 continue
             config.logger.warning("Request failed after retries: %s %s", url, e)

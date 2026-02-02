@@ -1,9 +1,66 @@
 """Google Places API: text search + place details for website."""
 
 import time
+from typing import List, Optional, Tuple
 
 from lead_gen import config
 from lead_gen.http_utils import request_with_retry
+
+
+def get_restaurants_google_batch(
+    query: str,
+    api_key: str,
+    page_token: Optional[str] = None,
+) -> Tuple[List[dict], Optional[str]]:
+    """
+    Fetch one page of restaurants from Google Places. Returns (results, next_page_token).
+    On OVER_QUERY_LIMIT or other terminal errors, returns (partial_results, None).
+    """
+    base_text = "https://maps.googleapis.com/maps/api/place/textsearch/json"
+    base_details = "https://maps.googleapis.com/maps/api/place/details/json"
+    results: List[dict] = []
+
+    if page_token is None:
+        resp = request_with_retry(base_text, {"query": query, "key": api_key})
+    else:
+        resp = request_with_retry(base_text, {"pagetoken": page_token, "key": api_key})
+
+    if resp is None:
+        return results, None
+    data = resp.json()
+    status = data.get("status")
+    if status != "OK" and status != "ZERO_RESULTS":
+        if status == "OVER_QUERY_LIMIT":
+            config.logger.warning("Google Places over query limit")
+        elif status == "REQUEST_DENIED":
+            config.logger.warning(
+                "Check your Google API key. Request was denied (invalid key, expired, or API not enabled)."
+            )
+        return results, None
+
+    for pred in data.get("results", []):
+        name = pred.get("name") or ""
+        place_id = pred.get("place_id")
+        if not place_id:
+            continue
+        time.sleep(config.GOOGLE_REQUEST_DELAY)
+        detail_resp = request_with_retry(
+            base_details,
+            {"place_id": place_id, "fields": "website", "key": api_key},
+        )
+        website = None
+        if detail_resp:
+            detail_data = detail_resp.json()
+            if detail_data.get("status") == "OK":
+                result = detail_data.get("result", {})
+                website = result.get("website") or result.get("url")
+        results.append({"name": name, "website": website or None, "source": "google"})
+
+    next_token = data.get("next_page_token")
+    if next_token:
+        time.sleep(1)  # Google requires short delay before using next_page_token
+    config.logger.info("Google batch: %s places (next_page_token=%s)", len(results), "yes" if next_token else "no")
+    return results, next_token
 
 
 def get_restaurants_google(query: str, api_key: str) -> list:

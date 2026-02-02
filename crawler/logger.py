@@ -2,11 +2,14 @@
 
 import logging
 
-from colorama import Fore, Style, init
+try:
+    from colorama import Fore, Style, init
+    init(autoreset=True)
+except ImportError:
+    Fore = type("Fore", (), {"CYAN": "", "GREEN": "", "YELLOW": "", "RED": "", "MAGENTA": ""})()
+    Style = type("Style", (), {"RESET_ALL": ""})()
 
 import config
-
-init(autoreset=True)
 
 
 class Logger:

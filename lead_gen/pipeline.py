@@ -37,14 +37,7 @@ def run_pipeline(
     if existing_rows:
         config.logger.info("Loaded %s existing rows from %s (will skip those domains)", len(existing_rows), output_csv)
 
-    config.logger.info("Fetching restaurants from API(s)... (this can take a while with Geoapify)")
-    restaurants = get_all_restaurants_parallel(
-        query,
-        google_key=google_key,
-        geoapify_key=geoapify_key,
-    )
-    config.logger.info("Total restaurants after merge: %s", len(restaurants))
-
+    config.logger.info("Fetching restaurants from API(s)... (processing starts as soon as first source returns)")
     with open(output_csv, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["restaurant_name", "website", "emails_found", "phone_numbers_found", "contact_page_found", "query"])
@@ -70,75 +63,80 @@ def run_pipeline(
     n_skip_robots = 0
     n_skip_dead = 0
 
-    for r in restaurants:
-        name = (r.get("name") or "").strip()
-        website = (r.get("website") or "").strip()
-        if not website:
-            n_skip_no_website += 1
-            config.logger.info("Skipping %s (no website)", name)
-            continue
-        final_url = resolve_final_url(website)
-        if not final_url:
-            n_skip_dead += 1
-            config.logger.info("Skipping %s (unreachable or invalid SSL when resolving redirects)", name)
-            continue
-        domain = extract_domain(final_url) or ""
-        if not domain:
-            continue
-        if domain in seen_domains:
-            n_skip_already += 1
-            config.logger.info("Skipping %s (domain %s already in CSV)", name, domain)
-            continue
-        if domain in config.SKIP_DOMAINS or any(domain.endswith("." + d) for d in config.SKIP_DOMAINS):
-            n_skip_chain_domain += 1
-            config.logger.info("Skipping %s (chain/franchise domain %s)", name, domain)
-            continue
-        if ollama_chain_enabled and is_chain_restaurant_ollama(name, domain):
-            n_skip_chain_ollama += 1
-            config.logger.info("Skipping %s (Ollama: chain/franchise)", name)
-            continue
-        seen_domains.add(domain)
+    for batch, is_final in get_all_restaurants_parallel(
+        query,
+        google_key=google_key,
+        geoapify_key=geoapify_key,
+    ):
+        config.logger.info("Processing batch of %s restaurants (API batch)", len(batch))
+        for r in batch:
+            name = (r.get("name") or "").strip()
+            website = (r.get("website") or "").strip()
+            if not website:
+                n_skip_no_website += 1
+                config.logger.info("Skipping %s (no website)", name)
+                continue
+            final_url = resolve_final_url(website)
+            if not final_url:
+                n_skip_dead += 1
+                config.logger.info("Skipping %s (unreachable or invalid SSL when resolving redirects)", name)
+                continue
+            domain = extract_domain(final_url) or ""
+            if not domain:
+                continue
+            if domain in seen_domains:
+                n_skip_already += 1
+                config.logger.info("Skipping %s (domain %s already in CSV)", name, domain)
+                continue
+            if domain in config.SKIP_DOMAINS or any(domain.endswith("." + d) for d in config.SKIP_DOMAINS):
+                n_skip_chain_domain += 1
+                config.logger.info("Skipping %s (chain/franchise domain %s)", name, domain)
+                continue
+            if ollama_chain_enabled and is_chain_restaurant_ollama(name, domain):
+                n_skip_chain_ollama += 1
+                config.logger.info("Skipping %s (Ollama: chain/franchise)", name)
+                continue
+            seen_domains.add(domain)
 
-        if not is_scraping_allowed(final_url):
-            n_skip_robots += 1
+            if not is_scraping_allowed(final_url):
+                n_skip_robots += 1
+                save_row(
+                    output_csv,
+                    name,
+                    final_url,
+                    [],
+                    [],
+                    contact_page_found="",
+                    query=query,
+                    write_header=False,
+                )
+                config.logger.info("Skipping %s (robots.txt disallows) — logged to CSV", name)
+                continue
+
+            emails, phones, homepage_ok, contact_page_found = get_public_emails(final_url)
+            if not homepage_ok:
+                n_skip_dead += 1
+                config.logger.info("Skipping %s (site unreachable or invalid SSL)", name)
+                continue
             save_row(
                 output_csv,
                 name,
                 final_url,
-                [],
-                [],
-                contact_page_found="",
+                emails,
+                phones,
+                contact_page_found=contact_page_found,
                 query=query,
                 write_header=False,
             )
-            config.logger.info("Skipping %s (robots.txt disallows) — logged to CSV", name)
-            continue
-
-        emails, phones, homepage_ok, contact_page_found = get_public_emails(final_url)
-        if not homepage_ok:
-            n_skip_dead += 1
-            config.logger.info("Skipping %s (site unreachable or invalid SSL)", name)
-            continue
-        save_row(
-            output_csv,
-            name,
-            final_url,
-            emails,
-            phones,
-            contact_page_found=contact_page_found,
-            query=query,
-            write_header=False,
-        )
-        n_written += 1
-        print("new restaurant :", name)
-        config.logger.info(
-            "Saved %s | %s | emails: %s | phones: %s",
-            name,
-            final_url,
-            "|".join(emails) if emails else "(none)",
-            "|".join(phones) if phones else "(none)",
-        )
-        time.sleep(config.SCRAPE_DELAY_SECONDS)
+            n_written += 1
+            config.logger.info(
+                "Saved %s | %s | emails: %s | phones: %s",
+                name,
+                final_url,
+                "|".join(emails) if emails else "(none)",
+                "|".join(phones) if phones else "(none)",
+            )
+            time.sleep(config.SCRAPE_DELAY_SECONDS)
 
     config.logger.info(
         "Done. Written: %s | Skipped: already=%s, chain(domain)=%s, chain(Ollama)=%s, robots=%s, dead/SSL=%s, no_website=%s",
